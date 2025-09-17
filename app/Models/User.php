@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class User extends Authenticatable
 {
@@ -74,5 +75,42 @@ class User extends Authenticatable
     public function chatsAsDeveloper()
     {
         return $this->hasMany(Chat::class, 'developer_id');
+    }
+
+    public function chatsAsClient(): HasManyThrough
+    {
+        return $this->hasManyThrough(Chat::class, Ticket::class, 'client_id', 'ticket_id');
+    }
+
+    public function unreadMessagesCount(): int
+    {
+        $userId = $this->id;
+
+        if ($this->isDeveloper()) {
+            return Message::query()
+                ->join('chats', 'messages.chat_id', '=', 'chats.id')
+                ->where('chats.developer_id', $userId)
+                ->where('messages.user_id', '!=', $userId)
+                ->where(function ($query) {
+                    $query->whereNull('chats.developer_last_read_at')
+                        ->orWhereColumn('messages.created_at', '>', 'chats.developer_last_read_at');
+                })
+                ->count();
+        }
+
+        if ($this->isClient()) {
+            return Message::query()
+                ->join('chats', 'messages.chat_id', '=', 'chats.id')
+                ->join('tickets', 'chats.ticket_id', '=', 'tickets.id')
+                ->where('tickets.client_id', $userId)
+                ->where('messages.user_id', '!=', $userId)
+                ->where(function ($query) {
+                    $query->whereNull('chats.client_last_read_at')
+                        ->orWhereColumn('messages.created_at', '>', 'chats.client_last_read_at');
+                })
+                ->count();
+        }
+
+        return 0;
     }
 }

@@ -6,6 +6,7 @@
   </head>
 
   <body class="min-h-screen bg-white dark:bg-zinc-800">
+    @php($unreadMessagesCount = auth()->check() ? auth()->user()->unreadMessagesCount() : 0)
     <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
       <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
@@ -16,7 +17,16 @@
       <flux:navlist variant="outline">
         <flux:navlist.group :heading="__('Platform')" class="grid">
           <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-          <flux:navlist.item icon="chat-bubble-left-right" :href="route('chats')" :current="request()->routeIs('chats')" wire:navigate>{{ __('Chat') }}</flux:navlist.item>
+          <flux:navlist.item icon="chat-bubble-left-right" :href="route('chats')" :current="request()->routeIs('chats')" wire:navigate>
+            <span class="flex w-full items-center justify-between">
+              <span>{{ __('Chat') }}</span>
+              @if ($unreadMessagesCount > 0)
+                <span class="ms-2 inline-flex items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold leading-none text-white">
+                  {{ $unreadMessagesCount }}
+                </span>
+              @endif
+            </span>
+          </flux:navlist.item>
         </flux:navlist.group>
       </flux:navlist>
 

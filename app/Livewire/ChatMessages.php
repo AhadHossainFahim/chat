@@ -23,6 +23,10 @@ class ChatMessages extends Component
             ->orderBy('created_at', 'asc')
             ->get();
 
+        if ($user = auth()->user()) {
+            $this->chat->markAsReadFor($user);
+        }
+
         $this->dispatch('scroll-to-bottom');
     }
 
